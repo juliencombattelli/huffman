@@ -74,14 +74,10 @@ public:
         return freq;
     }
 
-    static huffman_tree::frequency_map merge_sum(
-        const huffman_tree::frequency_map& a,
-        const huffman_tree::frequency_map& b) {
-        huffman_tree::frequency_map res(a);
-        for (auto [k, v] : b) {
-            res[k] += v;
+    void merge_sum(const frequency_map& a, frequency_map& b) {
+        for (auto [k, v] : a) {
+            b[k] += v;
         }
-        return res;
     }
 
     huffman_tree::frequency_map count_char_multi(const std::string& text) {
@@ -110,7 +106,7 @@ public:
         auto result = counter(std::string_view(text).substr(lower_bound));
 
         for (auto& unit : counting_units) {
-            result = merge_sum(result, unit.get());
+            merge_sum(unit.get(), result);
         }
 
         return result;

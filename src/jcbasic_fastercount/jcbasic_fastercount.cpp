@@ -51,12 +51,10 @@ frequency_map count_char(const std::string& text) {
     return freq;
 }
 
-frequency_map merge_sum(const frequency_map& a, const frequency_map& b) {
-    frequency_map res(a);
-    for (auto [k, v] : b) {
-        res[k] += v;
+void merge_sum(const frequency_map& a, frequency_map& b) {
+    for (auto [k, v] : a) {
+        b[k] += v;
     }
-    return res;
 }
 
 frequency_map count_char_multi(const std::string& text) {
@@ -83,7 +81,7 @@ frequency_map count_char_multi(const std::string& text) {
     auto result = counter(std::string_view(text).substr(lower_bound));
 
     for (auto& unit : counting_units) {
-        result = merge_sum(result, unit.get());
+        merge_sum(unit.get(), result);
     }
 
     return result;
