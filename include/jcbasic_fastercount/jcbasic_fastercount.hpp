@@ -4,18 +4,19 @@
 // EMail       : julien.combattelli@gmail.com
 // Copyright   : This file is part of huffman banchmark project, provided under
 //               MIT license. See LICENSE for more information.
-// Description : Basic implementation of huffman encoding using
-//               std::priority_queue and std::unique_ptr.
+// Description : Implementation of huffman encoding based on jcbasic but using
+//               unordered_map for counting.
 //=============================================================================
 #pragma once
 
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
-namespace jcb {
+namespace jcbfc {
 
 struct minheap_node {
     using ptr = std::unique_ptr<minheap_node>;
@@ -31,10 +32,9 @@ struct minheap_node {
 
 void print_codes(minheap_node* root, std::string str);
 
-using count_char_result = std::pair<std::vector<char>, std::vector<int>>;
-count_char_result count_char(const std::string& text);
+using frequency_map = std::unordered_map<char, int>;
+frequency_map count_char(const std::string& text);
 
-minheap_node::ptr get_huffman_tree(const std::vector<char>& data,
-                                   const std::vector<int>& freq);
+minheap_node::ptr get_huffman_tree(const frequency_map& freq);
 
-}  // namespace jcb
+}  // namespace jcbfc

@@ -1,10 +1,10 @@
-#include <jcbasic/jcbasic.hpp>
+#include <jcbasic_fastercount/jcbasic_fastercount.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <queue>
 
-namespace jcb {
+namespace jcbfc {
 
 struct minheap_node_comparator {
     bool operator()(const minheap_node::ptr& l, const minheap_node::ptr& r) {
@@ -42,28 +42,19 @@ void print_codes(minheap_node* root, std::string str) {
     print_codes(root->right.get(), str + "1");
 }
 
-count_char_result count_char(const std::string& text) {
-    std::vector<char> data;
-    std::vector<int> freqs;
+frequency_map count_char(const std::string& text) {
+    frequency_map freq;
     for (const auto& c : text) {
-        auto it = std::find(data.begin(), data.end(), c);
-        int index = std::distance(data.begin(), it);
-        if (it == data.end()) {
-            data.emplace_back(c);
-            freqs.emplace_back(1);
-        } else {
-            ++freqs[index];
-        }
+        freq[c]++;
     }
-    return {data, freqs};
+    return freq;
 }
 
-minheap_node::ptr get_huffman_tree(const std::vector<char>& data,
-                                   const std::vector<int>& freq) {
+minheap_node::ptr get_huffman_tree(const frequency_map& freq) {
     minheap heap;
 
-    for (int i = 0; i < data.size(); ++i) {
-        heap.push(std::make_unique<minheap_node>(data[i], freq[i]));
+    for (auto [c, f] : freq) {
+        heap.push(std::make_unique<minheap_node>(c, f));
     }
 
     while (heap.size() != 1) {
@@ -80,4 +71,4 @@ minheap_node::ptr get_huffman_tree(const std::vector<char>& data,
     return heap.top_and_pop();
 }
 
-}  // namespace jcb
+}  // namespace jcbfc

@@ -4,10 +4,8 @@
 // EMail       : julien.combattelli@gmail.com
 // Copyright   : This file is part of huffman banchmark project, provided under
 //               MIT license. See LICENSE for more information.
-// Description : Implementation of huffman encoding based on jcbasic, but using
-//               a node pool and an index queue (aka vector<node> +
-//               priority_queue<int>), instead of a node pointer queue (aka
-//               std::priority_queue<node_ptr>), for better cache locality.
+// Description : Implementation of huffman encoding based on jcindex but using
+//               unordered_map for counting.
 //=============================================================================
 #pragma once
 
@@ -26,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-namespace jcidx {
+namespace jcidxfc {
 
 enum class reserve_memory : bool { no = false, yes = true };
 
@@ -63,40 +61,27 @@ public:
     using minheap =
         std::priority_queue<nodeindex, std::vector<nodeindex>, node_compare>;
 
+    using frequency_map = std::unordered_map<char, int>;
+
     huffman_tree(reserve_memory reserve = reserve_memory::no)
         : reserve_mem{reserve} {}
 
-    std::pair<std::vector<char>, std::vector<int>> count_char(
-        const std::string& text) {
-        std::vector<char> data;
-        if (reserve_mem == reserve_memory::yes) {
-            data.reserve(256);
-        }
-        std::vector<int> freqs;
-        if (reserve_mem == reserve_memory::yes) {
-            freqs.reserve(256);
-        }
+    frequency_map count_char(const std::string& text) {
+        frequency_map freq;
         for (const auto& c : text) {
-            auto it = std::find(data.begin(), data.end(), c);
-            int index = std::distance(data.begin(), it);
-            if (it == data.end()) {
-                data.emplace_back(c);
-                freqs.emplace_back(1);
-            } else {
-                ++freqs[index];
-            }
+            freq[c]++;
         }
-        return {data, freqs};
+        return freq;
     }
 
-    node& generate(const std::vector<char>& data,
-                   const std::vector<int>& freq) {
-        if (reserve_mem == reserve_memory::yes) {
-            nodes.reserve(512);
-        }
-        for (int i = 0; i < data.size(); ++i) {
-            nodes.emplace_back(data[i], freq[i]);
-            heap.emplace(i);
+    node& generate(const frequency_map& freqs) {
+        nodes.reserve(freqs.size() * 2);
+        {
+            nodeindex i = 0;
+            for (auto [data, freq] : freqs) {
+                nodes.emplace_back(data, freq);
+                heap.emplace(i++);
+            }
         }
 
         while (heap.size() != 1) {
@@ -127,4 +112,4 @@ private:
     reserve_memory reserve_mem;
 };
 
-}  // namespace jcidx
+}  // namespace jcidxfc
