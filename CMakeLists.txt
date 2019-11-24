@@ -10,8 +10,7 @@ target_include_directories(mementar PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_library(jcbasic STATIC ${PROJECT_SOURCE_DIR}/src/jcbasic/jcbasic.cpp)
 target_include_directories(jcbasic PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_compile_features(jcbasic PRIVATE cxx_std_17)
+target_compile_features(jcbasic PUBLIC cxx_std_17)
 
 add_executable(huffmanbench ${PROJECT_SOURCE_DIR}/test/benchmark.cpp)
-target_compile_features(huffmanbench PRIVATE cxx_std_17)
 target_link_libraries(huffmanbench mementar jcbasic benchmark_main Threads::Threads)
