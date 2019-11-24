@@ -67,8 +67,9 @@ minheap_node::ptr get_huffman_tree(const std::vector<char>& data,
                                    const std::vector<int>& freq) {
     minheap heap;
 
-    for (int i = 0; i < data.size(); ++i)
+    for (int i = 0; i < data.size(); ++i) {
         heap.push(std::make_unique<minheap_node>(data[i], freq[i]));
+    }
 
     while (heap.size() != 1) {
         auto left = heap.top_and_pop();
