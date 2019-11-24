@@ -66,8 +66,9 @@ public:
     huffman_tree(reserve_memory reserve = reserve_memory::no)
         : reserve_mem{reserve} {}
 
-    frequency_map count_char(const std::string& text) {
+    static frequency_map count_char(std::string_view text) {
         frequency_map freq;
+        freq.reserve(256);
         for (const auto& c : text) {
             freq[c]++;
         }
@@ -87,23 +88,14 @@ public:
         std::vector<std::future<huffman_tree::frequency_map>> counting_units(
             thread_count);
 
-        auto counter = [](std::string_view text) {
-            huffman_tree::frequency_map freq;
-            for (const auto& c : text) {
-                freq[c]++;
-            }
-            return freq;
-        };
-
         size_t lower_bound = 0;
         for (auto& unit : counting_units) {
             unit =
-                std::async(std::launch::async, counter,
-                           std::string_view(text).substr(lower_bound, bound));
+                std::async(std::launch::async, count_char,
+                           std::string_view{text}.substr(lower_bound, bound));
             lower_bound += bound;
         }
-        // Handle leftover
-        auto result = counter(std::string_view(text).substr(lower_bound));
+        auto result = count_char(std::string_view{text}.substr(lower_bound));
 
         for (auto& unit : counting_units) {
             merge_sum(unit.get(), result);

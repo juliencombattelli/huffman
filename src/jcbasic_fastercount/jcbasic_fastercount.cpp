@@ -43,8 +43,9 @@ void print_codes(minheap_node* root, std::string str) {
     print_codes(root->right.get(), str + "1");
 }
 
-frequency_map count_char(const std::string& text) {
+frequency_map count_char(std::string_view text) {
     frequency_map freq;
+    freq.reserve(256);
     for (const auto& c : text) {
         freq[c]++;
     }
@@ -63,22 +64,13 @@ frequency_map count_char_multi(const std::string& text) {
 
     std::vector<std::future<frequency_map>> counting_units(thread_count);
 
-    auto counter = [](std::string_view text) {
-        frequency_map freq;
-        for (const auto& c : text) {
-            freq[c]++;
-        }
-        return freq;
-    };
-
     size_t lower_bound = 0;
     for (auto& unit : counting_units) {
-        unit = std::async(std::launch::async, counter,
-                          std::string_view(text).substr(lower_bound, bound));
+        unit = std::async(std::launch::async, count_char,
+                          std::string_view{text}.substr(lower_bound, bound));
         lower_bound += bound;
     }
-    // Handle leftover
-    auto result = counter(std::string_view(text).substr(lower_bound));
+    auto result = count_char(std::string_view{text}.substr(lower_bound));
 
     for (auto& unit : counting_units) {
         merge_sum(unit.get(), result);
