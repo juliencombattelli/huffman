@@ -44,18 +44,17 @@ void print_codes(minheap_node* root, std::string str) {
 }
 
 frequency_map count_char(std::string_view text) {
-    frequency_map freq;
-    freq.reserve(256);
+    frequency_map freq{};  // Zero-initialized array
+    // freq.reserve(256);
     for (const auto& c : text) {
         freq[c]++;
     }
     return freq;
 }
 
-void merge_sum(const frequency_map& a, frequency_map& b) {
-    for (auto [k, v] : a) {
-        b[k] += v;
-    }
+void sum(const frequency_map& a, frequency_map& b) {
+    std::transform(std::begin(a), std::end(a), std::begin(b), std::begin(b),
+                   std::plus<int>{});
 }
 
 frequency_map count_char_multi(const std::string& text) {
@@ -73,7 +72,7 @@ frequency_map count_char_multi(const std::string& text) {
     auto result = count_char(std::string_view{text}.substr(lower_bound));
 
     for (auto& unit : counting_units) {
-        merge_sum(unit.get(), result);
+        sum(unit.get(), result);
     }
 
     return result;
@@ -82,8 +81,9 @@ frequency_map count_char_multi(const std::string& text) {
 minheap_node::ptr get_huffman_tree(const frequency_map& freq) {
     minheap heap;
 
-    for (auto [c, f] : freq) {
-        heap.push(std::make_unique<minheap_node>(c, f));
+    unsigned i = 0;
+    for (auto f : freq) {
+        heap.push(std::make_unique<minheap_node>(i++, f));
     }
 
     while (heap.size() != 1) {

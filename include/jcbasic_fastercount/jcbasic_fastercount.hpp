@@ -9,6 +9,7 @@
 //=============================================================================
 #pragma once
 
+#include <array>
 #include <memory>
 #include <optional>
 #include <string>
@@ -32,7 +33,7 @@ struct minheap_node {
 
 void print_codes(minheap_node* root, std::string str);
 
-using frequency_map = std::unordered_map<char, int>;
+using frequency_map = std::array<int, 256>;
 frequency_map count_char(std::string_view text);
 
 frequency_map merge_sum(const frequency_map& a, const frequency_map& b);
