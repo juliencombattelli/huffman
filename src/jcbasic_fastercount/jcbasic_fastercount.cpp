@@ -1,6 +1,7 @@
 #include <jcbasic_fastercount/jcbasic_fastercount.hpp>
 
 #include <algorithm>
+#include <future>
 #include <iostream>
 #include <queue>
 
@@ -48,6 +49,44 @@ frequency_map count_char(const std::string& text) {
         freq[c]++;
     }
     return freq;
+}
+
+frequency_map merge_sum(const frequency_map& a, const frequency_map& b) {
+    frequency_map res(a);
+    for (auto [k, v] : b) {
+        res[k] += v;
+    }
+    return res;
+}
+
+frequency_map count_char_multi(const std::string& text) {
+    const auto thread_count = std::thread::hardware_concurrency() - 1;
+    const auto bound = text.size() / thread_count;
+
+    std::vector<std::future<frequency_map>> counting_units(thread_count);
+
+    auto counter = [](std::string_view text) {
+        frequency_map freq;
+        for (const auto& c : text) {
+            freq[c]++;
+        }
+        return freq;
+    };
+
+    size_t lower_bound = 0;
+    for (auto& unit : counting_units) {
+        unit = std::async(std::launch::async, counter,
+                          std::string_view(text).substr(lower_bound, bound));
+        lower_bound += bound;
+    }
+    // Handle leftover
+    auto result = counter(std::string_view(text).substr(lower_bound));
+
+    for (auto& unit : counting_units) {
+        result = merge_sum(result, unit.get());
+    }
+
+    return result;
 }
 
 minheap_node::ptr get_huffman_tree(const frequency_map& freq) {

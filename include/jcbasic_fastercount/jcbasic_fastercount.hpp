@@ -35,6 +35,9 @@ void print_codes(minheap_node* root, std::string str);
 using frequency_map = std::unordered_map<char, int>;
 frequency_map count_char(const std::string& text);
 
+frequency_map merge_sum(const frequency_map& a, const frequency_map& b);
+frequency_map count_char_multi(const std::string& text);
+
 minheap_node::ptr get_huffman_tree(const frequency_map& freq);
 
 }  // namespace jcbfc

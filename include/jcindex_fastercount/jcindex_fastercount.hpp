@@ -74,6 +74,48 @@ public:
         return freq;
     }
 
+    static huffman_tree::frequency_map merge_sum(
+        const huffman_tree::frequency_map& a,
+        const huffman_tree::frequency_map& b) {
+        huffman_tree::frequency_map res(a);
+        for (auto [k, v] : b) {
+            res[k] += v;
+        }
+        return res;
+    }
+
+    huffman_tree::frequency_map count_char_multi(const std::string& text) {
+        const auto thread_count = std::thread::hardware_concurrency() - 1;
+        const auto bound = text.size() / thread_count;
+
+        std::vector<std::future<huffman_tree::frequency_map>> counting_units(
+            thread_count);
+
+        auto counter = [](std::string_view text) {
+            huffman_tree::frequency_map freq;
+            for (const auto& c : text) {
+                freq[c]++;
+            }
+            return freq;
+        };
+
+        size_t lower_bound = 0;
+        for (auto& unit : counting_units) {
+            unit =
+                std::async(std::launch::async, counter,
+                           std::string_view(text).substr(lower_bound, bound));
+            lower_bound += bound;
+        }
+        // Handle leftover
+        auto result = counter(std::string_view(text).substr(lower_bound));
+
+        for (auto& unit : counting_units) {
+            result = merge_sum(result, unit.get());
+        }
+
+        return result;
+    }
+
     node& generate(const frequency_map& freqs) {
         nodes.reserve(freqs.size() * 2);
         {
