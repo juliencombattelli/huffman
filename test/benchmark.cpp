@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+#include <mementar/mementar.hpp>
 
 #include <iostream>
 
