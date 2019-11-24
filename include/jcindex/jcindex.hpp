@@ -1,0 +1,130 @@
+//=============================================================================
+// Name        : jcindex.hpp
+// Author      : Julien Combattelli
+// EMail       : julien.combattelli@gmail.com
+// Copyright   : This file is part of huffman banchmark project, provided under
+//               MIT license. See LICENSE for more information.
+// Description : Implementation of huffman encoding based on jcbasic, but using
+//               a node pool and an index queue (aka vector<node> +
+//               priority_queue<int>), instead of a node pointer queue (aka
+//               std::priority_queue<node_ptr>), for better cache locality.
+//=============================================================================
+#pragma once
+
+#include <algorithm>
+#include <future>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <queue>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+namespace jcidx {
+
+enum class reserve_memory : bool { no = false, yes = true };
+
+class huffman_tree {
+public:
+    struct node;
+    using nodelist = std::vector<node>;
+    using nodeindex = typename nodelist::size_type;
+    static constexpr nodeindex kInvalidIndex =
+        std::numeric_limits<nodeindex>::max();
+
+    struct node {
+        std::optional<char> data;
+        unsigned freq;
+        nodeindex left{kInvalidIndex};
+        nodeindex right{kInvalidIndex};
+
+        node() = default;
+        node(char data, unsigned freq) : data{data}, freq{freq} {}
+        node(unsigned freq, nodeindex left, nodeindex right)
+            : freq{freq}, left{left}, right{right} {}
+    };
+
+    struct node_compare {
+        explicit node_compare(const nodelist& nodes) : nodes{nodes} {}
+        bool operator()(nodeindex l, nodeindex r) {
+            return nodes[l].freq > nodes[r].freq;
+        }
+
+    private:
+        const nodelist& nodes;
+    };
+
+    using minheap =
+        std::priority_queue<nodeindex, std::vector<nodeindex>, node_compare>;
+
+    huffman_tree(reserve_memory reserve = reserve_memory::no)
+        : reserve_mem{reserve} {}
+
+    std::pair<std::vector<char>, std::vector<int>> count_char(
+        const std::string& text) {
+        std::vector<char> data;
+        if (reserve_mem == reserve_memory::yes) {
+            data.reserve(256);
+        }
+        std::vector<int> freqs;
+        if (reserve_mem == reserve_memory::yes) {
+            freqs.reserve(256);
+        }
+        for (const auto& c : text) {
+            auto it = std::find(data.begin(), data.end(), c);
+            int index = std::distance(data.begin(), it);
+            if (it == data.end()) {
+                data.emplace_back(c);
+                freqs.emplace_back(1);
+            } else {
+                ++freqs[index];
+            }
+        }
+        return {data, freqs};
+    }
+
+    node& generate(const std::vector<char>& data,
+                   const std::vector<int>& freq) {
+        if (reserve_mem == reserve_memory::yes) {
+            nodes.reserve(512);
+        }
+        for (int i = 0; i < data.size(); ++i) {
+            nodes.emplace_back(data[i], freq[i]);
+            heap.emplace(i);
+        }
+
+        while (heap.size() != 1) {
+            auto left = heap.top();
+            heap.pop();
+            auto right = heap.top();
+            heap.pop();
+
+            nodes.emplace_back(nodes[left].freq + nodes[right].freq, left,
+                               right);
+            heap.push(nodes.size() - 1);
+        }
+        return nodes[heap.top()];
+    }
+
+    void print_codes(const huffman_tree::node& root, std::string str = "") {
+        if (root.data)
+            std::cerr << *root.data << ": " << str << "\n";
+        if (root.left != huffman_tree::kInvalidIndex)
+            print_codes(nodes[root.left], str + "0");
+        if (root.right != huffman_tree::kInvalidIndex)
+            print_codes(nodes[root.right], str + "1");
+    }
+
+private:
+    nodelist nodes;
+    minheap heap{node_compare{nodes}};
+    reserve_memory reserve_mem;
+};
+
+}  // namespace jcidx
