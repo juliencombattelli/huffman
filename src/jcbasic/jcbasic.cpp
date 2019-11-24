@@ -63,8 +63,8 @@ count_char_result count_char(const std::string& text) {
     return {data, freqs};
 }
 
-minheap_node::ptr huffman_codes(const std::vector<char>& data,
-                                const std::vector<int>& freq) {
+minheap_node::ptr get_huffman_tree(const std::vector<char>& data,
+                                   const std::vector<int>& freq) {
     minheap heap;
 
     for (int i = 0; i < data.size(); ++i)
