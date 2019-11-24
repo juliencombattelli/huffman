@@ -53,6 +53,14 @@ static void jcbfc_bench(benchmark::State& state) {
 }
 BENCHMARK(jcbfc_bench);
 
+static void jcbfc_multi_bench(benchmark::State& state) {
+    for (auto _ : state) {
+        auto freq = jcbfc::count_char_multi(input);
+        auto tree = jcbfc::get_huffman_tree(freq);
+    }
+}
+BENCHMARK(jcbfc_multi_bench);
+
 static void jcidx_bench(benchmark::State& state) {
     for (auto _ : state) {
         jcidx::huffman_tree tree(jcidx::reserve_memory::no);
@@ -70,3 +78,12 @@ static void jcidxfc_bench(benchmark::State& state) {
     }
 }
 BENCHMARK(jcidxfc_bench);
+
+static void jcidxfc_multi_bench(benchmark::State& state) {
+    for (auto _ : state) {
+        jcidxfc::huffman_tree tree(jcidxfc::reserve_memory::no);
+        auto freq = tree.count_char_multi(input);
+        auto r = tree.generate(freq);
+    }
+}
+BENCHMARK(jcidxfc_multi_bench);
