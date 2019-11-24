@@ -63,27 +63,30 @@ BENCHMARK(jcbfc_multi_bench);
 
 static void jcidx_bench(benchmark::State& state) {
     for (auto _ : state) {
-        jcidx::huffman_tree tree(jcidx::reserve_memory::no);
+        jcidx::huffman_tree tree(
+            static_cast<jcidx::reserve_memory>(state.range(0)));
         auto [data, freq] = tree.count_char(input);
         auto r = tree.generate(data, freq);
     }
 }
-BENCHMARK(jcidx_bench);
+BENCHMARK(jcidx_bench)->Arg(0)->Arg(1);
 
 static void jcidxfc_bench(benchmark::State& state) {
     for (auto _ : state) {
-        jcidxfc::huffman_tree tree(jcidxfc::reserve_memory::no);
+        jcidxfc::huffman_tree tree(
+            static_cast<jcidxfc::reserve_memory>(state.range(0)));
         auto freq = tree.count_char(input);
         auto r = tree.generate(freq);
     }
 }
-BENCHMARK(jcidxfc_bench);
+BENCHMARK(jcidxfc_bench)->Arg(0)->Arg(1);
 
 static void jcidxfc_multi_bench(benchmark::State& state) {
     for (auto _ : state) {
-        jcidxfc::huffman_tree tree(jcidxfc::reserve_memory::no);
+        jcidxfc::huffman_tree tree(
+            static_cast<jcidxfc::reserve_memory>(state.range(0)));
         auto freq = tree.count_char_multi(input);
         auto r = tree.generate(freq);
     }
 }
-BENCHMARK(jcidxfc_multi_bench);
+BENCHMARK(jcidxfc_multi_bench)->Arg(0)->Arg(1);
