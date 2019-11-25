@@ -4,6 +4,7 @@ project(huffman)
 add_subdirectory(${PROJECT_SOURCE_DIR}/external)
 
 find_package(Threads)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 add_library(mementar STATIC ${PROJECT_SOURCE_DIR}/src/mementar/mementar.cpp)
 target_include_directories(mementar PUBLIC ${PROJECT_SOURCE_DIR}/include)
@@ -24,11 +25,23 @@ add_library(jcindex_fastercount INTERFACE)
 target_include_directories(jcindex_fastercount INTERFACE ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(jcindex_fastercount INTERFACE cxx_std_17)
 
+add_library(jcdod STATIC ${PROJECT_SOURCE_DIR}/src/jcdod/jcdod.cpp)
+target_include_directories(jcdod PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_compile_features(jcdod PUBLIC cxx_std_17)
+
+add_executable(jcdodtest ${PROJECT_SOURCE_DIR}/test/test_jcdod.cpp)
+target_link_libraries(jcdodtest 
+    jcdod
+    Threads::Threads
+)
+
 add_executable(huffmanbench ${PROJECT_SOURCE_DIR}/test/benchmark.cpp)
 target_link_libraries(huffmanbench 
     mementar 
     jcbasic jcbasic_fastercount 
     jcindex jcindex_fastercount
+    jcdod
     benchmark_main 
     Threads::Threads
+    Boost::program_options
 )
