@@ -46,7 +46,7 @@ void print_codes(minheap_node* root, std::string str) {
 frequency_map count_char(std::string_view text) {
     frequency_map freq{};  // Zero-initialized array
     // freq.reserve(256);
-    for (const auto& c : text) {
+    for (const std::uint8_t& c : text) {
         freq[c]++;
     }
     return freq;
