@@ -37,7 +37,7 @@ using frequency_map = std::array<int, 256>;
 frequency_map count_char(std::string_view text);
 
 frequency_map merge_sum(const frequency_map& a, const frequency_map& b);
-frequency_map count_char_multi(const std::string& text);
+frequency_map count_char_multi(std::string_view text);
 
 minheap_node::ptr get_huffman_tree(const frequency_map& freq);
 
