@@ -58,7 +58,7 @@ void sum(const frequency_map& a, frequency_map& b) {
 }
 
 frequency_map count_char_multi(std::string_view text) {
-    const auto thread_count = 3;  // std::thread::hardware_concurrency() - 1;
+    const auto thread_count = std::thread::hardware_concurrency() - 1;
     const auto bound = text.size() / thread_count;
 
     std::vector<std::future<frequency_map>> counting_units(thread_count);
