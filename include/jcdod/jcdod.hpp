@@ -11,6 +11,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <future>
 #include <iostream>
 #include <limits>
@@ -25,34 +26,56 @@
 #include <utility>
 #include <vector>
 
-namespace jcidxfc {
+namespace jcdod {
 
-enum class reserve_memory : bool { no = false, yes = true };
+class nodelist {
+public:
+    using nodefreq = std::uint32_t;
+    using nodeindex = short;
+
+    // Number of values representable with a char
+    static constexpr nodeindex char_count = 1 << (sizeof(char) * 8);
+
+    // Maximum number of leaf nodes (character) in an Huffman tree
+    static constexpr nodeindex leaf_count = char_count;
+
+    // Maximum number of nodes (leaf + bind) in an Huffman tree
+    static constexpr nodeindex node_count = leaf_count * 2;
+
+    static constexpr nodeindex invalid_index =
+        std::numeric_limits<nodeindex>::max();
+
+    template <typename T>
+    using nodedata = std::array<T, node_count>;
+
+    // Compile-time initialization of nodedata
+    template <typename T>
+    static constexpr nodedata<T> initialize_nodedata(T value) {
+        nodedata<T> data{};
+        for (auto& element : data) {
+            element = value;
+        }
+        return data;
+    }
+
+    void set(nodeindex node, nodefreq f) noexcept;
+
+    void set(nodeindex node, unsigned f, nodeindex l, nodeindex r) noexcept;
+
+    nodedata<nodefreq> freq{};
+    nodedata<nodeindex> left = initialize_nodedata(invalid_index);
+    nodedata<nodeindex> right = initialize_nodedata(invalid_index);
+};
 
 class huffman_tree {
 public:
-    struct node;
-    using nodelist = std::vector<node>;
-    using nodeindex = typename nodelist::size_type;
-    static constexpr nodeindex kInvalidIndex =
-        std::numeric_limits<nodeindex>::max();
-
-    struct node {
-        std::optional<char> data;
-        unsigned freq;
-        nodeindex left{kInvalidIndex};
-        nodeindex right{kInvalidIndex};
-
-        node() = default;
-        node(char data, unsigned freq) : data{data}, freq{freq} {}
-        node(unsigned freq, nodeindex left, nodeindex right)
-            : freq{freq}, left{left}, right{right} {}
-    };
+    using nodeindex = nodelist::nodeindex;
+    using nodefreq = nodelist::nodefreq;
 
     struct node_compare {
         explicit node_compare(const nodelist& nodes) : nodes{nodes} {}
         bool operator()(nodeindex l, nodeindex r) {
-            return nodes[l].freq > nodes[r].freq;
+            return nodes.freq[l] > nodes.freq[r];
         }
 
     private:
@@ -62,85 +85,19 @@ public:
     using minheap =
         std::priority_queue<nodeindex, std::vector<nodeindex>, node_compare>;
 
-    using frequency_map = std::unordered_map<char, int>;
+    using frequency_map = std::array<nodefreq, 256>;
 
-    huffman_tree(reserve_memory reserve = reserve_memory::no)
-        : reserve_mem{reserve} {}
+    static frequency_map count_char(std::string_view text);
 
-    static frequency_map count_char(std::string_view text) {
-        frequency_map freq;
-        freq.reserve(256);
-        for (const auto& c : text) {
-            freq[c]++;
-        }
-        return freq;
-    }
+    void sum(const frequency_map& a, frequency_map& b);
 
-    void merge_sum(const frequency_map& a, frequency_map& b) {
-        for (auto [k, v] : a) {
-            b[k] += v;
-        }
-    }
+    frequency_map count_char_multi(std::string_view text);
 
-    huffman_tree::frequency_map count_char_multi(const std::string& text) {
-        const auto thread_count = std::thread::hardware_concurrency() - 1;
-        const auto bound = text.size() / thread_count;
+    nodeindex generate(const frequency_map& freq);
 
-        std::vector<std::future<huffman_tree::frequency_map>> counting_units(
-            thread_count);
+    void print_codes(huffman_tree::nodeindex root, std::string str = "");
 
-        size_t lower_bound = 0;
-        for (auto& unit : counting_units) {
-            unit =
-                std::async(std::launch::async, count_char,
-                           std::string_view{text}.substr(lower_bound, bound));
-            lower_bound += bound;
-        }
-        auto result = count_char(std::string_view{text}.substr(lower_bound));
-
-        for (auto& unit : counting_units) {
-            merge_sum(unit.get(), result);
-        }
-
-        return result;
-    }
-
-    node& generate(const frequency_map& freqs) {
-        nodes.reserve(freqs.size() * 2);
-        {
-            nodeindex i = 0;
-            for (auto [data, freq] : freqs) {
-                nodes.emplace_back(data, freq);
-                heap.emplace(i++);
-            }
-        }
-
-        while (heap.size() != 1) {
-            auto left = heap.top();
-            heap.pop();
-            auto right = heap.top();
-            heap.pop();
-
-            nodes.emplace_back(nodes[left].freq + nodes[right].freq, left,
-                               right);
-            heap.push(nodes.size() - 1);
-        }
-        return nodes[heap.top()];
-    }
-
-    void print_codes(const huffman_tree::node& root, std::string str = "") {
-        if (root.data)
-            std::cerr << *root.data << ": " << str << "\n";
-        if (root.left != huffman_tree::kInvalidIndex)
-            print_codes(nodes[root.left], str + "0");
-        if (root.right != huffman_tree::kInvalidIndex)
-            print_codes(nodes[root.right], str + "1");
-    }
-
-private:
     nodelist nodes;
-    minheap heap{node_compare{nodes}};
-    reserve_memory reserve_mem;
 };
 
-}  // namespace jcidxfc
+}  // namespace jcdod
