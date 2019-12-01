@@ -1,9 +1,5 @@
 #include <benchmark/benchmark.h>
-#include <jcbasic/jcbasic.hpp>
-#include <jcbasic_fastercount/jcbasic_fastercount.hpp>
-#include <jcdod/jcdod.hpp>
-#include <jcindex/jcindex.hpp>
-#include <jcindex_fastercount/jcindex_fastercount.hpp>
+#include <jc/jc.hpp>
 #include <mementar/mementar.hpp>
 
 #include <boost/program_options.hpp>
@@ -58,91 +54,32 @@ static void mementar_bench(benchmark::State& state) {
     }
 }
 BENCHMARK(mementar_bench);
-/*
-static void jcb_bench(benchmark::State& state) {
-    for (auto _ : state) {
-        auto [data, freq] = jcb::count_char(input);
-        auto tree = jcb::get_huffman_tree(data, freq);
-    }
-}
-BENCHMARK(jcb_bench);
-*/
-static void jcbfc_bench(benchmark::State& state) {
-    jcbfc::minheap_node::ptr root;
-    for (auto _ : state) {
-        auto freq = jcbfc::count_char(input);
-        benchmark::DoNotOptimize(root = jcbfc::get_huffman_tree(freq));
-        benchmark::ClobberMemory();
-    }
-}
-BENCHMARK(jcbfc_bench);
 
-static void jcbfc_multi_bench(benchmark::State& state) {
-    jcbfc::minheap_node::ptr root;
-    for (auto _ : state) {
-        auto freq = jcbfc::count_char_multi(input);
-        benchmark::DoNotOptimize(root = jcbfc::get_huffman_tree(freq));
-        benchmark::ClobberMemory();
-    }
-}
-BENCHMARK(jcbfc_multi_bench);
-/*
-static void jcidx_bench(benchmark::State& state) {
-    for (auto _ : state) {
-        jcidx::huffman_tree tree(jcidx::reserve_memory::yes);
-        auto [data, freq] = tree.count_char(input);
-        auto r = tree.generate(data, freq);
-    }
-}
-BENCHMARK(jcidx_bench);
-
-static void jcidxfc_bench(benchmark::State& state) {
-    for (auto _ : state) {
-        jcidxfc::huffman_tree tree(jcidxfc::reserve_memory::yes);
-        auto freq = tree.count_char(input);
-        auto r = tree.generate(freq);
-    }
-}
-BENCHMARK(jcidxfc_bench);
-
-static void jcidxfc_multi_bench(benchmark::State& state) {
-    for (auto _ : state) {
-        jcidxfc::huffman_tree tree(jcidxfc::reserve_memory::yes);
-        auto freq = tree.count_char_multi(input);
-        auto r = tree.generate(freq);
-    }
-}
-BENCHMARK(jcidxfc_multi_bench);
-*/
-static void jcdod_bench(benchmark::State& state) {
+static void jc_bench(benchmark::State& state) {
     size_t root;
     for (auto _ : state) {
-        jcdod::huffman_tree tree;
-        auto f = tree.count_char(input);
-        benchmark::DoNotOptimize(root = tree.generate(f));
+        benchmark::DoNotOptimize(root = jc::huffman::encode(input, 1));
         benchmark::ClobberMemory();
     }
 }
-BENCHMARK(jcdod_bench);
+BENCHMARK(jc_bench);
 
-static void jcdod_multi_bench(benchmark::State& state) {
+static void jc_multi_bench(benchmark::State& state) {
     size_t root;
     for (auto _ : state) {
-        jcdod::huffman_tree tree;
-        auto f = tree.count_char_multi(input);
-        benchmark::DoNotOptimize(root = tree.generate(f));
+        benchmark::DoNotOptimize(
+            root = jc::huffman::encode(input,
+                                       std::thread::hardware_concurrency()));
         benchmark::ClobberMemory();
     }
 }
-BENCHMARK(jcdod_multi_bench);
+BENCHMARK(jc_multi_bench);
 
 int main(int argc, char** argv) {
     std::size_t input_size = 0;
     int char_count = 255;
 
     ::benchmark::Initialize(&argc, argv);
-    // if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
-    //}
 
     namespace bpo = boost::program_options;
     bpo::options_description desc("Options");
