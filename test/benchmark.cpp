@@ -1,11 +1,11 @@
 #include <benchmark/benchmark.h>
-#include <jc/jc.hpp>
-#include <mementar/mementar.hpp>
 
 #include <boost/program_options.hpp>
-
 #include <fstream>
 #include <iostream>
+#include <jc_arr/jc_arr.hpp>
+#include <jc_vec/jc_vec.hpp>
+#include <mementar/mementar.hpp>
 #include <random>
 #include <stdexcept>
 
@@ -53,27 +53,51 @@ static void mementar_bench(benchmark::State& state) {
         benchmark::ClobberMemory();
     }
 }
-BENCHMARK(mementar_bench);
+// BENCHMARK(mementar_bench);
 
-static void jc_bench(benchmark::State& state) {
+static void jc_vec_bench(benchmark::State& state) {
     size_t root;
+    auto freqs = jcv::huffman::count_char(input, 1);
+    jcv::huffman::Tree tree;
     for (auto _ : state) {
-        benchmark::DoNotOptimize(root = jc::huffman::encode(input, 1));
+        benchmark::DoNotOptimize(root = tree.generate(freqs));
         benchmark::ClobberMemory();
     }
 }
-BENCHMARK(jc_bench);
+BENCHMARK(jc_vec_bench);
 
-static void jc_multi_bench(benchmark::State& state) {
+static void jc_vec_multi_bench(benchmark::State& state) {
     size_t root;
     for (auto _ : state) {
         benchmark::DoNotOptimize(
-            root = jc::huffman::encode(input,
-                                       std::thread::hardware_concurrency()));
+            root = jcv::huffman::encode(input,
+                                        std::thread::hardware_concurrency()));
         benchmark::ClobberMemory();
     }
 }
-BENCHMARK(jc_multi_bench);
+// BENCHMARK(jc_vec_multi_bench);
+
+static void jc_arr_bench(benchmark::State& state) {
+    size_t root;
+    auto freqs = jca::huffman::count_char(input, 1);
+    jca::huffman::Tree tree;
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(root = tree.generate(freqs));
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(jc_arr_bench);
+
+static void jc_arr_multi_bench(benchmark::State& state) {
+    size_t root;
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(
+            root = jca::huffman::encode(input,
+                                        std::thread::hardware_concurrency()));
+        benchmark::ClobberMemory();
+    }
+}
+// BENCHMARK(jc_arr_multi_bench);
 
 int main(int argc, char** argv) {
     std::size_t input_size = 0;
